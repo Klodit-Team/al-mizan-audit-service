@@ -1,0 +1,188 @@
+// Générateur Prisma Client pour accéder au modèle en TypeScript.
+generator client {
+  // Utilise le client JS officiel Prisma.
+  provider = "prisma-client-js"
+}
+
+// Source de données PostgreSQL (URL via variables d'environnement).
+datasource db {
+  // Moteur PostgreSQL obligatoire.
+  provider = "postgresql"
+  // URL de connexion, lue depuis .env.
+  url      = env("DATABASE_URL")
+}
+
+// Table append-only des événements d'audit.
+model AuditLog {
+  // Identifiant unique UUID.
+  id             String   @id @default(uuid()) @db.Char(36)
+  // Utilisateur à l'origine de l'action (optionnel).
+  user_id        String?  @db.Char(36)
+  // Nom de l'action (ex: CREATE, UPDATE, DELETE).
+  action         String   @db.VarChar(100)
+  // Nom de l'entité concernée.
+  entite         String   @db.VarChar(100)
+  // Identifiant de l'entité (optionnel).
+  entite_id      String?  @db.Char(36)
+  // Détails textuels complémentaires.
+  details        String?  @db.Text
+  // Adresse IP à l'origine de l'action.
+  ip_address     String?  @db.VarChar(45)
+  // User-Agent client (navigateur ou service).
+  user_agent     String?  @db.VarChar(512)
+  // Hash SHA-256 courant (chaîné).
+  hash_sha256    String   @db.VarChar(64)
+  // Hash SHA-256 précédent pour la chaîne.
+  hash_precedent String   @db.VarChar(64)
+  // Date/heure de l'événement.
+  horodatage     DateTime
+
+  // Mapping exact vers la table SQL.
+  @@map("audit_logs")
+  // Index sur l'utilisateur.
+  @@index([user_id])
+  // Index sur l'action.
+  @@index([action])
+  // Index sur l'entité.
+  @@index([entite])
+  // Index sur l'horodatage.
+  @@index([horodatage])
+}
+
+// Enum des types d'incidents IA.
+enum TypeIncident {
+  // Divergence d'évaluations grè-à-grè.
+  DIVERGENCE_GRE_A_GRE
+  // Divergence d'évaluation globale.
+  DIVERGENCE_EVALUATION
+  // Erreur du modèle IA.
+  ERREUR_IA
+  // Confiance faible signalée.
+  CONFIANCE_FAIBLE
+
+  // Mapping exact vers l'enum SQL.
+  @@map("type_incident")
+}
+
+// Enum de gravité des incidents.
+enum Gravite {
+  // Gravité faible.
+  FAIBLE
+  // Gravité moyenne.
+  MOYENNE
+  // Gravité élevée.
+  ELEVEE
+  // Gravité critique.
+  CRITIQUE
+
+  // Mapping exact vers l'enum SQL.
+  @@map("gravite")
+}
+
+// Enum du statut des incidents.
+enum StatutIncident {
+  // Incident ouvert.
+  OUVERT
+  // Incident en analyse.
+  EN_ANALYSE
+  // Incident résolu.
+  RESOLU
+  // Incident ignoré.
+  IGNORE
+
+  // Mapping exact vers l'enum SQL.
+  @@map("statut")
+}
+
+// Table des incidents IA détectés.
+model IncidentIa {
+  // Identifiant unique UUID.
+  id               String         @id @default(uuid()) @db.Char(36)
+  // Type d'incident.
+  type_incident    TypeIncident
+  // Entité source de l'incident.
+  entite_source    String         @db.VarChar(100)
+  // Identifiant de l'entité source.
+  entite_id        String         @db.Char(36)
+  // Nom du modèle IA.
+  modele_ia        String         @db.VarChar(100)
+  // Décision produite par l'IA.
+  decision_ia      String?        @db.Text
+  // Décision humaine finale.
+  decision_humaine String?        @db.Text
+  // Écart de score entre décisions (optionnel).
+  ecart_score      Decimal?       @db.Decimal(5, 2)
+  // Confiance IA (0-1).
+  confiance_ia     Decimal?       @db.Decimal(5, 2)
+  // Gravité de l'incident.
+  gravite          Gravite
+  // Statut de l'incident (par défaut OUVERT).
+  statut           StatutIncident @default(OUVERT)
+  // Assignee responsable (optionnel).
+  assignee_id      String?        @db.Char(36)
+  // Notes de résolution (optionnel).
+  resolution_notes String?        @db.Text
+  // Date de détection.
+  date_detection   DateTime
+  // Date de résolution (optionnel).
+  date_resolution  DateTime?
+  // Date de création (maintenant).
+  created_at       DateTime       @default(now())
+
+  // Relation 1-N vers les décisions.
+  logsDecisions    LogIaDecision[]
+
+  // Mapping exact vers la table SQL.
+  @@map("incidents_ia")
+  // Index sur le type.
+  @@index([type_incident])
+  // Index sur le statut.
+  @@index([statut])
+  // Index sur la gravité.
+  @@index([gravite])
+  // Index sur l'entité source.
+  @@index([entite_source])
+}
+
+// Enum des acteurs des décisions.
+enum ActeurType {
+  // Décision IA.
+  IA
+  // Décision humaine.
+  HUMAIN
+  // Décision système.
+  SYSTEME
+
+  // Mapping exact vers l'enum SQL.
+  @@map("acteur_type")
+}
+
+// Table des logs de décisions IA/humaines.
+model LogIaDecision {
+  // Identifiant unique UUID.
+  id               String     @id @default(uuid()) @db.Char(36)
+  // Incident rattaché.
+  incident_id      String     @db.Char(36)
+  // Action de décision (ex: RESOLUTION).
+  action           String     @db.VarChar(100)
+  // Type d'acteur (IA, HUMAIN, SYSTEME).
+  acteur_type      ActeurType
+  // Identifiant d'acteur (optionnel).
+  acteur_id        String?    @db.VarChar(100)
+  // Contexte JSON de la décision.
+  donnees_contexte Json?
+  // Metadata JSON supplémentaire.
+  metadata         Json?
+  // Date/heure de la décision.
+  horodatage       DateTime
+
+  // Relation vers l'incident.
+  incident         IncidentIa @relation(fields: [incident_id], references: [id])
+
+  // Mapping exact vers la table SQL.
+  @@map("logs_ia_decisions")
+  // Index sur l'incident.
+  @@index([incident_id])
+  // Index sur le type d'acteur.
+  @@index([acteur_type])
+}
