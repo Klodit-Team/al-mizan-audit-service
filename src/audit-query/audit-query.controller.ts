@@ -23,6 +23,19 @@ export class AuditQueryController {
     };
   }
 
+  @Get('activities')
+  async getActivities(
+    @Query('serviceContractantId') serviceContractantId?: string,
+    @Query('operateurId') operateurId?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ success: boolean; data: unknown; message: string }> {
+    const activities = await this.auditQueryService.findActivities({
+      userId: serviceContractantId || operateurId,
+      limit: limit ? parseInt(limit, 10) : 10,
+    });
+    return { success: true, data: activities, message: 'Activities fetched' };
+  }
+
   @Get('logs/:id')
   async getLogById(
     @Param('id') id: string,

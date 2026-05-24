@@ -41,4 +41,44 @@ export class AuditQueryService {
       orderBy: { horodatage: 'asc' },
     });
   }
+
+  async findActivities(params: { userId?: string; limit?: number }): Promise<{
+    id: string;
+    type: string;
+    title: string;
+    subtitle: string;
+    timestamp: string;
+  }[]> {
+    const { userId, limit = 10 } = params;
+
+    const where: Prisma.AuditLogWhereInput = userId ? { user_id: userId } : {};
+
+    const logs = await this.prismaService.auditLog.findMany({
+      where,
+      orderBy: { horodatage: 'desc' },
+      take: limit,
+    });
+
+    return logs.map((log) => {
+      const actionUpper = (log.action || '').toUpperCase();
+      let type = 'STATUS';
+      if (actionUpper.includes('SOUMISSION') || actionUpper.includes('SUBMIT')) {
+        type = 'SOUMISSION';
+      } else if (actionUpper.includes('RECOURS')) {
+        type = 'RECOURS';
+      } else if (actionUpper.includes('NOTIFICATION')) {
+        type = 'NOTIFICATION';
+      } else if (actionUpper.includes('RESULTAT') || actionUpper.includes('ATTRIBUTION')) {
+        type = 'RESULTAT';
+      }
+
+      return {
+        id: log.id,
+        type,
+        title: `${log.action} - ${log.entite}`,
+        subtitle: log.details || `Action sur ${log.entite} ${log.entite_id || ''}`.trim(),
+        timestamp: log.horodatage.toISOString(),
+      };
+    });
+  }
 }
