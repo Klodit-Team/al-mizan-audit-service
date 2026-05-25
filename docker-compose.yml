@@ -2,6 +2,7 @@ version: "3.9"
 services:
   postgres:
     image: postgres:15
+    container_name: al-mizan-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -10,22 +11,26 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    networks:
+      - al-mizan-network
+
   app:
     build: .
     environment:
       DATABASE_URL: postgresql://postgres:password@postgres:5432/audit_db
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      PORT: 3001
+      RABBITMQ_URL: amqp://guest:guest@al-mizan-rabbitmq:5672
+      PORT: 3009
       NODE_ENV: production
     ports:
-      - "3001:3001"
+      - "3009:3009"
     depends_on:
       - postgres
-      - rabbitmq
+    networks:
+      - al-mizan-network
+
 volumes:
   postgres_data:
+
+networks:
+  al-mizan-network:
+    external: true

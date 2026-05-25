@@ -1,14 +1,13 @@
 // Générateur Prisma Client pour accéder au modèle en TypeScript.
 generator client {
   // Utilise le client JS officiel Prisma.
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 // Source de données PostgreSQL (URL via variables d'environnement).
 datasource db {
-  // Moteur PostgreSQL obligatoire.
-  provider = "postgresql"
-  // URL de connexion, lue depuis .env.
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 

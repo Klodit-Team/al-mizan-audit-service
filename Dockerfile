@@ -5,12 +5,14 @@ COPY package.json package-lock.json* ./
 RUN npm install
 COPY tsconfig.json nest-cli.json ./
 COPY prisma ./prisma
+RUN npx prisma generate
 COPY src ./src
 RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 2: runner
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
