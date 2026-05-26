@@ -10,9 +10,9 @@ export class AuditLoggerConsumer {
   constructor(private readonly auditLoggerService: AuditLoggerService) {}
 
   @RabbitSubscribe({
-    exchange: 'audit.exchange',
-    routingKey: 'audit.events',
-    queue: 'audit.events',
+    exchange: 'audit.events',
+    routingKey: 'audit.action.log',
+    queue: 'audit.action.log',
   })
   async handleAuditEvent(message: AuditEventDto): Promise<void> {
     try {

@@ -10,7 +10,7 @@ export class IncidentsIaConsumer {
   constructor(private readonly incidentsIaService: IncidentsIaService) {}
 
   @RabbitSubscribe({
-    exchange: 'audit.exchange',
+    exchange: 'audit.events',
     routingKey: 'incident.detected',
     queue: 'incident.detected',
   })

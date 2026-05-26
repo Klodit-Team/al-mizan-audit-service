@@ -22,8 +22,8 @@ import { AppController } from './app.controller';
         uri: configService.get<string>('RABBITMQ_URL') ?? '',
         exchanges: [
           {
-            name: 'audit.exchange',
-            type: 'direct',
+            name: 'audit.events',
+            type: 'topic',
           },
         ],
         connectionInitOptions: { wait: true },
