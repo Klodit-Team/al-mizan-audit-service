@@ -15,7 +15,7 @@ export class AuditLoggerService {
 
     const previousHash = lastLog?.hash_sha256 ?? 'GENESIS';
     const id = randomUUID();
-    const horodatage = new Date(dto.horodatage);
+    const horodatage = new Date(dto.horodatage || (dto as any).timestamp || Date.now());
     const chainInput = `${id}${horodatage.toISOString()}${dto.user_id ?? ''}${dto.action}${dto.entite}${dto.entite_id ?? ''}${previousHash}`;
     const hash_sha256 = createHash('sha256').update(chainInput).digest('hex');
 
