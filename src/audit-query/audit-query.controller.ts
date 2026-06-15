@@ -3,11 +3,40 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuditQueryService } from './audit-query.service';
 import { FilterAuditDto } from './dto/filter-audit.dto';
 import { AuditLogEntity } from '../audit-logger/entities/audit-log.entity';
+import { IntegrityCheckerService } from '../integrity-checker/integrity-checker.service';
 
 @ApiTags('audit')
 @Controller('audit')
 export class AuditQueryController {
-  constructor(private readonly auditQueryService: AuditQueryService) {}
+  constructor(
+    private readonly auditQueryService: AuditQueryService,
+    private readonly integrityCheckerService: IntegrityCheckerService,
+  ) {}
+
+  @Get('integrity')
+  @ApiOperation({ summary: 'Vérifier l\'intégrité de la chaîne de logs d\'audit (hash SHA-256)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Rapport d\'intégrité de la chaîne',
+    schema: {
+      type: 'object',
+      properties: {
+        valid: { type: 'boolean' },
+        checkedCount: { type: 'number' },
+        invalidCount: { type: 'number' },
+        invalidIds: { type: 'array', items: { type: 'string' } },
+        checkedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async verifyIntegrity(): Promise<{ success: boolean; data: unknown; message: string }> {
+    const report = await this.integrityCheckerService.verifyChain();
+    return {
+      success: true,
+      data: { ...report, valid: report.invalidCount === 0 },
+      message: report.invalidCount === 0 ? 'Chaîne intègre' : `${report.invalidCount} entrée(s) altérée(s) détectée(s)`,
+    };
+  }
 
   @Get('logs')
   @ApiOperation({ summary: 'Rechercher et filtrer les logs d\'audit' })
