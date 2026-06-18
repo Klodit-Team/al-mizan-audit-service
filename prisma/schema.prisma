@@ -54,6 +54,8 @@ enum TypeIncident {
   DIVERGENCE_GRE_A_GRE
   // Divergence d'évaluation globale.
   DIVERGENCE_EVALUATION
+  // Anomalie détectée sur une soumission.
+  ANOMALIE_SOUMISSION
   // Erreur du modèle IA.
   ERREUR_IA
   // Confiance faible signalée.
